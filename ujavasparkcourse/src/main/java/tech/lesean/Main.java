@@ -9,6 +9,8 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
+import scala.Tuple2;
+
 public class Main {
 
 	public static void main(String[] args) {
@@ -26,22 +28,16 @@ public class Main {
 		SparkConf conf = new SparkConf().setAppName("First Spark Java Program").setMaster("local[*]");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
-		JavaRDD<Integer> myRdd = sc.parallelize(inputData);
+		JavaRDD<Integer> originalIntegers = sc.parallelize(inputData);
 		
-		Integer result = myRdd.reduce((value1, value2) -> value1 + value2);
+		// First line - traditional Java with separate class
+		//JavaRDD<IntegerWithSquareRoot> sqrtRdd = originalIntegers.map( value -> new IntegerWithSquareRoot(value) );
+		// Second line - new Scale Tuple2 type - don't need separate Java class
+		JavaRDD<Tuple2<Integer, Double>> sqrtRdd = originalIntegers.map( value -> new Tuple2<>(value, Math.sqrt(value)) );
 		
-		JavaRDD<Double> sqrtRdd = myRdd.map( value -> Math.sqrt(value) );
-		
-		//sqrtRdd.foreach( System.out::println );
-		sqrtRdd.collect().forEach( value -> System.out.println(value));
-		
-		System.out.println(result);
-		
-		// how many elements in sqrtRdd
-		// using just map and reduce
-		JavaRDD<Long> singleIntegerRdd = sqrtRdd.map( value -> 1L);
-		Long count = singleIntegerRdd.reduce((value1, value2) -> value1 + value2);
-		System.out.println(count);
+		// Examples of Tuples with different sizes
+		// new Tuple5(1, 4, 7, 3, 2)
+		// max size of Tuple = Tuple22
 		
 		sc.close();
 
