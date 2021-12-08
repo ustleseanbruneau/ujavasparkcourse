@@ -1,40 +1,20 @@
 package tech.lesean;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.Optional;
 
 import scala.Tuple2;
 
 public class Main {
 
 	public static void main(String[] args) {
-		
-		// section 10 - Coalesce
-		//  Coalesce - combines data from all partitions into a single partition
-		// 
-		// combine all data into single partition
-		// Not the right solution
-		//  sorted = sorted.coalesce(1);
-		//
-		// Get number of partitions
-		//  sorted.getNumPartitions()
-		//
-		//  Problem is Spark Driver would sent foreach command to execute the 
-		//  lambda on each partition in parallel.
-		//  Call any action other than foreach.  They will be implemented to give correct
-		//    results (but be mindful of performance).
-		//
-		// collect() is generally used when you've finished and you want to gather a small
-		//   RDD onto the driver node for eg printing.
-		// Only call if you're sure the RDD will fit into a single JVM's RAM
-		// If the results are still "big", we'd write to a file (eg - HDFS)
 		
 		// Windows machines
 		//System.setProperty("hadoop.home.dir", "c:/opt/hadoop");
@@ -46,42 +26,37 @@ public class Main {
 		SparkConf conf = new SparkConf().setAppName("First Spark Java Program").setMaster("local[*]");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
-		JavaRDD<String> initialRdd = sc.textFile("src/main/resources/subtitles/input.txt");
-		//JavaRDD<String> initialRdd = sc.textFile("src/main/resources/subtitles/input-spring.txt");
+		List<Tuple2<Integer, Integer>> visitsRaw = new ArrayList<>();
+		visitsRaw.add(new Tuple2<>(4,18));
+		visitsRaw.add(new Tuple2<>(6,4));
+		visitsRaw.add(new Tuple2<>(10,9));
 		
-		// RegEx - [^a-zA-Z\\s] - if not a letter or space, replace
-		// all lowercase letters - for grouping and sorting
+		List<Tuple2<Integer, String>> usersRaw = new ArrayList<>();
+		usersRaw.add(new Tuple2<>(1, "John"));
+		usersRaw.add(new Tuple2<>(2, "Bob"));
+		usersRaw.add(new Tuple2<>(3, "Alan"));
+		usersRaw.add(new Tuple2<>(4, "Doris"));
+		usersRaw.add(new Tuple2<>(5, "Marybelle"));
+		usersRaw.add(new Tuple2<>(6, "Raquel"));
 		
-		JavaRDD<String> lettersOnlyRdd = initialRdd.map( sentence -> sentence.replaceAll("[^a-zA-Z\\s]", "").toLowerCase() );
+		JavaPairRDD<Integer, Integer> visits = sc.parallelizePairs(visitsRaw);
+		JavaPairRDD<Integer, String> users = sc.parallelizePairs(usersRaw);
 		
-		JavaRDD<String> removedBlankLines = lettersOnlyRdd.filter( sentence -> sentence.trim().length() > 0);
+		// Left outer join
+		JavaPairRDD<Integer, Tuple2<Integer, Optional<String>>> joinedRdd = visits.leftOuterJoin(users);
+		// .orElse() - default a value if not exists
+		joinedRdd.foreach( value -> System.out.println(value) );
+		//joinedRdd.foreach( it -> System.out.println(it._2._2.orElse("blank").toUpperCase() ));
 
-		JavaRDD<String> justWords = removedBlankLines.flatMap( sentence -> Arrays.asList(sentence.split(" ")).iterator());
+		// right outer join
+		//JavaPairRDD<Integer, Tuple2<Optional<Integer>, String>> joinedRdd = visits.rightOuterJoin(users);
+		//joinedRdd.foreach( it -> System.out.println(" user " + it._2._2 + " had " + it._2._1.orElse(0) ));
+
+		// cartesian
+		//JavaPairRDD<Tuple2<Integer, Integer>, Tuple2<Integer, String>> joinedRdd = visits.cartesian(users);
+		//joinedRdd.foreach( value -> System.out.println(value) );
+
 		
-		JavaRDD<String> blankWordsRemoved = justWords.filter(word -> word.trim().length() > 0);
-		
-		JavaRDD<String> justInterestingWords = blankWordsRemoved.filter(word -> Util.isNotBoring(word));
-		
-		JavaPairRDD<String, Long> pairRdd = justInterestingWords.mapToPair(word -> new Tuple2<String, Long>(word, 1L));
-		
-		JavaPairRDD<String, Long> totals = pairRdd.reduceByKey((value1, value2) -> value1 + value2);
-		
-		JavaPairRDD<Long, String> switched = totals.mapToPair(tuple -> new Tuple2<Long, String> (tuple._2, tuple._1 ));
-		
-		JavaPairRDD<Long, String> sorted = switched.sortByKey(false);
-		
-		//sorted.forEach(System.out::println);
-		
-		// combine all data into single partition
-		// Not the right solution
-		//sorted = sorted.coalesce(1);
-		//System.out.println("There are " + sorted.getNumPartitions() + " partitions");
-		
-		//List<String> results = justInterestingWords.take(50);
-		List<Tuple2<Long, String>> results = sorted.take(10);
-		
-		//results.forEach(element -> System.out.println(element));
-		results.forEach(System.out::println);
 		sc.close();
 
 	}

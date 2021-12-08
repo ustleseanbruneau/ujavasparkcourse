@@ -1,0 +1,97 @@
+Section 12 - Joins
+
+33. Inner Joins
+
+Inner Join - 
+	Value is in both RDDs
+
+Nesting Tuples
+
+RDD simple example
+	JavaPairRDD<Integer, Integer> visits = sc.parallelizePairs(visitsRaw);
+	JavaPairRDD<Integer, String> users = sc.parallelizePairs(usersRaw);
+	
+	JavaPairRDD<Integer, Tuple2<Integer, String>> joinedRdd = visits.join(users); 
+	
+	joinedRdd.foreach(System.out::println);
+
+34. Left Outer Joins and Optionals
+
+Left Outer Joins -
+	All values in left RDD will be in results, matching values in right RDD will be in resulting RDD
+
+NULL result from right RDD will be 
+	Optional.empty
+
+Optionals are wrappers for objects -
+	Help prevent NULL pointer exceptions
+
+Code Example
+	JavaPairRDD<Integer, Tuple2<Integer, Optional<String>>> joinedRdd = visits.leftOuterJoin(users);
+	joinedRdd.foreach( value -> System.out.println(value) );
+
+Results:
+(4,(18,Optional[Doris]))
+(6,(4,Optional[Raquel]))
+(10,(9,Optional.empty))
+
+
+
+	// Just print the names in right RDD
+	// .orElse() - default a value if not exists
+	joinedRdd.foreach( it -> System.out.println(it._2._2.orElse("blank").toUpperCase() ));
+
+Results:
+DORIS
+RAQUEL
+BLANK
+
+
+
+35. Right Out Join
+
+Start from right outer join
+
+		JavaPairRDD<Integer, Tuple2<Optional<Integer>, String>> joinedRdd = visits.rightOuterJoin(users);
+		joinedRdd.foreach( it -> System.out.println(" user " + it._2._2 + " had " + it._2._1.orElse(0) ));
+
+Results:
+ user Doris had 18
+ user John had 0
+ user Raquel had 4
+ user Alan had 0
+ user Marybelle had 0
+ user Bob had 0
+
+
+
+	
+36. Full Joins and Cartesians
+	Cartesians (cross join) - 	
+
+		JavaPairRDD<Tuple2<Integer, Integer>, Tuple2<Integer, String>> joinedRdd = visits.cartesian(users);
+		joinedRdd.foreach( value -> System.out.println(value) );
+
+Results:
+((4,18),(1,John))
+((4,18),(2,Bob))
+((4,18),(3,Alan))
+((4,18),(4,Doris))
+((4,18),(5,Marybelle))
+((4,18),(6,Raquel))
+((6,4),(1,John))
+((6,4),(2,Bob))
+((6,4),(3,Alan))
+((6,4),(4,Doris))
+((6,4),(5,Marybelle))
+((6,4),(6,Raquel))
+
+
+
+
+
+
+	
+	
+	
+	
