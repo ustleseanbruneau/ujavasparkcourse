@@ -16,6 +16,26 @@ public class Main {
 
 	public static void main(String[] args) {
 		
+		// section 10 - Coalesce
+		//  Coalesce - combines data from all partitions into a single partition
+		// 
+		// combine all data into single partition
+		// Not the right solution
+		//  sorted = sorted.coalesce(1);
+		//
+		// Get number of partitions
+		//  sorted.getNumPartitions()
+		//
+		//  Problem is Spark Driver would sent foreach command to execute the 
+		//  lambda on each partition in parallel.
+		//  Call any action other than foreach.  They will be implemented to give correct
+		//    results (but be mindful of performance).
+		//
+		// collect() is generally used when you've finished and you want to gather a small
+		//   RDD onto the driver node for eg printing.
+		// Only call if you're sure the RDD will fit into a single JVM's RAM
+		// If the results are still "big", we'd write to a file (eg - HDFS)
+		
 		// Windows machines
 		//System.setProperty("hadoop.home.dir", "c:/opt/hadoop");
 		
@@ -50,11 +70,18 @@ public class Main {
 		
 		JavaPairRDD<Long, String> sorted = switched.sortByKey(false);
 		
+		//sorted.forEach(System.out::println);
+		
+		// combine all data into single partition
+		// Not the right solution
+		//sorted = sorted.coalesce(1);
+		//System.out.println("There are " + sorted.getNumPartitions() + " partitions");
+		
 		//List<String> results = justInterestingWords.take(50);
 		List<Tuple2<Long, String>> results = sorted.take(10);
 		
+		//results.forEach(element -> System.out.println(element));
 		results.forEach(System.out::println);
-		
 		sc.close();
 
 	}
