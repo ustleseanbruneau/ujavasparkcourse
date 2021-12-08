@@ -1,16 +1,14 @@
 package tech.lesean;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-
-import com.google.common.collect.Iterables;
-
-import scala.Tuple2;
 
 public class Main {
 
@@ -30,35 +28,19 @@ public class Main {
 		SparkConf conf = new SparkConf().setAppName("First Spark Java Program").setMaster("local[*]");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
-		//JavaRDD<String> originalLogMessages = sc.parallelize(inputData);
+//		JavaRDD<String> sentences = sc.parallelize(inputData);
+//		
+//		JavaRDD<String> words = sentences.flatMap(value -> Arrays.asList(value.split(" ")).iterator());
+//		
+//		JavaRDD filteredWords = words.filter(word -> word.length() > 1);
+//		
+//		filteredWords.foreach(value -> System.out.println(value));
 		
-		// split function on multiple lines
-//		JavaPairRDD<String, Long> pairRdd = originalLogMessages.mapToPair( rawValue -> {
-//			
-//			String[] columns = rawValue.split(":");
-//			String level = columns[0];
-//			
-//			return new Tuple2<>(level, 1L);
-//		} );
-		
-		// JavaPairRDD<String, Long> pairRdd = originalLogMessages.mapToPair( rawValue -> new Tuple2<>(rawValue.split(":")[0], 1L ));
-		
-		// JavaPairRDD<String, Long> sumsRdd = pairRdd.reduceByKey((value1, value2) -> value1 + value2);
-		
-		// sumsRdd.foreach( tuple -> System.out.println(tuple._1 + " has " + tuple._2 + " instances"));
-
-		// code optimization for the previous lines
+		// same as previous four lines - using consolodated coding
 		sc.parallelize(inputData)
-			.mapToPair(rawValue -> new Tuple2<>(rawValue.split(":")[0], 1L ))
-			.reduceByKey((value1, value2) -> value1 + value2)
-			.foreach(tuple -> System.out.println(tuple._1 + " has " + tuple._2 + " instances"));
-		
-		// groupbykey - careful in production environments
-//		sc.parallelize(inputData)
-//		.mapToPair(rawValue -> new Tuple2<>(rawValue.split(":")[0], 1L ))
-//		.groupByKey()
-//		.foreach( tuple -> System.out.println(tuple._1 + " has " + Iterables.size(tuple._2) + " instances"));
-	
+			.flatMap(value -> Arrays.asList(value.split(" ")).iterator())
+			.filter(word -> word.length() > 1)
+			.foreach(value -> System.out.println(value));
 		
 		sc.close();
 
