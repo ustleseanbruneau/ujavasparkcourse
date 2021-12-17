@@ -1,36 +1,5 @@
-package tech.lesean;
+// Section 22 - Multiple Groupings
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
-import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
-
-public class Main {
-
-	public static void main(String[] args) {
-		
-		// Windows machines
-		//System.setProperty("hadoop.home.dir", "c:/opt/hadoop");
-		
- 		// Get rid of extra logging
-		Logger.getLogger("org").setLevel(Level.ERROR);
-		Logger.getLogger("akka").setLevel(Level.ERROR);
-
-		// Java Spark - setting up a session
-		SparkSession spark = SparkSession.builder().appName("testingSql").master("local[*]")
-				.getOrCreate();
-		
-
-		// Section 22 - Multiple Groupings
 		// Produce a report showing the number of FATALs, WARNINGs, etc for each month
 		// Group By on two columns 
 		// Whenever you do a group, you must also do an aggregation
@@ -93,7 +62,3 @@ public class Main {
 		totals.show();
 
 		spark.close();		
-		
-	}
-
-}
