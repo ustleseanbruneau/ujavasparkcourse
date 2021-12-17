@@ -1,0 +1,69 @@
+// Section 17: Datasets
+
+Dataset objects are immutable
+
+RDD/Execution Plan is built up during Dataset.filter() method
+Not directly reading data into memory
+
+
+
+//   single row
+Row firstRow = dataset.first();
+
+// get(int index) - returns general object
+//String subject = firstRow.get(2).toString();
+//System.out.println(subject);
+
+// if using a header row, can use column name with .getAs(<<field_name>>) method.
+String subject = firstRow.getAs("subject").toString();
+System.out.println(subject);
+
+int year = Integer.parseInt(firstRow.getAs("year"));
+System.out.println("The year is: " + year);
+
+
+// multiple conditions in filter
+Dataset<Row> modernArtResults = dataset.filter("subject = 'Modern Art' AND year >= 2007 "); 
+
+
+// Dataset with a Lambda function
+//Dataset<Row> modernArtResults = dataset.filter( row -> row.getAs("subject").equals("Modern Art") 
+//													&& Integer.parseInt(row.getAs("year")) >= 2007);
+
+// using Column objects
+Column subjectColumn = dataset.col("subject");
+Column yearColumn = dataset.col("year");
+
+// Single column filter
+//Dataset<Row> modernArtResults = dataset.filter(subjectColumn.equalTo("Modern Art"));
+// Multiple columns filter
+Dataset<Row> modernArtResults = dataset.filter(subjectColumn.equalTo("Modern Art")
+															.and(yearColumn.geq(2007)));
+
+modernArtResults.show();
+
+
+
+// using import static org.apache.spark.sql.functions.*;
+// could declare column this way, or directly in filter method
+Column subjectColumn = col("subject");
+Column yearColumn = col("year");
+
+Dataset<Row> modernArtResults = dataset.filter(subjectColumn.equalTo("Modern Art")
+															.and(yearColumn.geq(2007)));
+
+modernArtResults.show();
+
+
+
+// using import static org.apache.spark.sql.functions.*;
+// Calling col(*) directly in filter method without Column declarations 
+Dataset<Row> modernArtResults = dataset.filter(col("subject").equalTo("Modern Art")
+		.and(col("year").geq(2007)));
+
+modernArtResults.show();
+
+
+
+
+
