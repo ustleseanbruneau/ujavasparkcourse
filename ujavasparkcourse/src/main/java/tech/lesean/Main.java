@@ -30,68 +30,33 @@ public class Main {
 				.getOrCreate();
 		
 
-		// Section 22 - Multiple Groupings
-		// Produce a report showing the number of FATALs, WARNINGs, etc for each month
-		// Group By on two columns 
-		// Whenever you do a group, you must also do an aggregation
-		// - if need to add a column, use number 1 and count(1)
-		
-//		List<Row> inMemory = new ArrayList<Row>();
-//
-//		inMemory.add(RowFactory.create("WARN", "2016-12-31 04:19:32"));
-//		inMemory.add(RowFactory.create("FATAL", "2016-12-31 03:22:34"));
-//		inMemory.add(RowFactory.create("WARN", "2016-12-31 03:21:21"));
-//		inMemory.add(RowFactory.create("INFO", "2015-4-21 14:32:21"));
-//		inMemory.add(RowFactory.create("FATAL","2015-4-21 19:23:20"));
-//
-//		StructField[] fields = new StructField[] {
-//			new StructField("level", DataTypes.StringType, false, Metadata.empty()),
-//			new StructField("datetime", DataTypes.StringType, false, Metadata.empty())
-//		};
-//
-//		StructType schema = new StructType(fields);
-//		Dataset<Row> dataset = spark.createDataFrame(inMemory, schema);
-//		
-//		dataset.createOrReplaceTempView("logging_table");
-		
-		// Full month spelled out
-		//  Don't really need this for aggregation line
-		//Dataset<Row> results = spark.sql("select level, date_format(datetime,'MMMM') as month from logging_table");
-
-		// Extra TempView Not required with Java 11
-		//results.createOrReplaceTempView("logging_table");
-		
-		// add count(1) column so you can group by the two columns level and month
-		//results = spark.sql("select level, date_format(datetime,'MMMM') as month, count(1) from logging_table group by level, month");
-		
-		// add count(1) column so you can group by the two columns level and month
-//		Dataset<Row> results = spark.sql("select level, date_format(datetime,'MMMM') as month, count(1) as total from logging_table group by level, month");
-//		
-//		results.show();
-//
-//		spark.close();
+		// Section 23 - Ordering
+		// Any column which is not part of the "grouping" must have an 
+		//	Aggregation function performed on it
 		
 		// using bigfile
 		Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/biglog.txt");
 		
 		dataset.createOrReplaceTempView("logging_table");
 		
-		Dataset<Row> results = spark.sql("select level, date_format(datetime,'MMMM') as month, count(1) as total from logging_table group by level, month");
 		
-		// only show first 20 rows
-		//results.show();
+		// add monthnum column to dataset in query
+		//   used for ordering
+//		Dataset<Row> results = spark.sql
+//				("select level, date_format(datetime,'MMMM') as month, "
+//						+ "cast(first(date_format(datetime,'M')) as int ) as monthnum, count(1) as total "
+//						+ "from logging_table group by level, month order by monthnum");
+//		
+//		// remove monthnum column from dataset
+//		results.drop("monthnum");
+		
+		// optimization - without temporary column monthnum
+		Dataset<Row> results = spark.sql
+		("select level, date_format(datetime,'MMMM') as month, count(1) as total "
+				+ "from logging_table group by level, month order by cast(first(date_format(datetime,'M')) as int ), level ");
 
-		// show all first 20 rows
-		// no truncate of column values with show(false) option
-		//results.show(false);
+		results.show(100);
 		
-		//results.show(100);
-		
-		results.createOrReplaceTempView("results_table");
-		
-		Dataset<Row> totals = spark.sql("select sum(total) from results_table");
-		totals.show();
-
 		spark.close();		
 		
 	}
