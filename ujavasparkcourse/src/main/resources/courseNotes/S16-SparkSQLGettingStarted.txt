@@ -1,0 +1,30 @@
+// Section 16: SparkSQL Getting Started
+
+// Java Spark - setting up a session - Linux or Mac
+SparkSession spark = SparkSession.builder().appName("testingSql")
+				.master("local[*]")
+				.getOrCreate();
+		
+// Java Spark - setting up a session - Windows
+SparkSession spark = SparkSession.builder().appName("testingSql")
+				.master("local[*]")
+				.config("spark.sql.warehouse.dir","file:///c:/tmp/")
+				.getOrCreate();
+
+// By default - Spark imports csv files without header line
+Dataset<Row> dataset = spark.read().csv("src/main/resources/exams/students.csv");
+		
+// if csv file has header line, need to add .option("header", true) to exclude from dataset 
+Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/exams/students.csv");
+
+
+// Dataset<Row> show() method will print out first 20 rows of dataset
+dataset.show();
+		
+// To get a count(*) of rows in dataset
+long numberOfRows = dataset.count();
+System.out.println("There are " + numberOfRows + " records.");
+
+// Close a spark session		
+spark.close();
+				
