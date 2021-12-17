@@ -30,7 +30,11 @@ public class Main {
 				.getOrCreate();
 		
 
-		// Section 20 - Grouping and Aggregations
+		// Section 21 - Date Formatting
+		// Standard Java - SimpleDateFormat
+		
+		// Produce a report showing the number of FATALs, WARNINGs, etc for each month
+		
 		List<Row> inMemory = new ArrayList<Row>();
 
 		inMemory.add(RowFactory.create("WARN", "2016-12-31 04:19:32"));
@@ -50,7 +54,16 @@ public class Main {
 		dataset.createOrReplaceTempView("logging_table");
 		
 		//Dataset<Row> results = spark.sql("select level, count(datetime) from logging_table group by level order by level");
-		Dataset<Row> results = spark.sql("select level, collect_list(datetime) from logging_table group by level order by level");
+		//Dataset<Row> results = spark.sql("select level, date_format(datetime,'yyyy') from logging_table");
+		//Dataset<Row> results = spark.sql("select level, date_format(datetime,'yy') from logging_table");
+		// Number of month - 1 based
+		//Dataset<Row> results = spark.sql("select level, date_format(datetime,'M') from logging_table");
+		// Number of month - 1 based, with leading zero
+		//Dataset<Row> results = spark.sql("select level, date_format(datetime,'MM') from logging_table");
+		// Three letter abbreviation of Month
+		//Dataset<Row> results = spark.sql("select level, date_format(datetime,'MMM') from logging_table");
+		// Full month spelled out
+		Dataset<Row> results = spark.sql("select level, date_format(datetime,'MMMM') as month from logging_table");
 
 		results.show();
 
