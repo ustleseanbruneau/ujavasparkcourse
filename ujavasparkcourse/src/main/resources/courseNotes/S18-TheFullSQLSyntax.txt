@@ -1,0 +1,20 @@
+// Section 18 - The Full SQL Syntax
+
+// SQL statement does not work in filter method
+//Dataset<Row> modernArtResults = dataset.filter("select * from students where subject = 'Modern Art' AND year >= 2007 ");
+//modernArtResults.show();
+
+// temporary view - in memory data structure
+dataset.createOrReplaceTempView("my_students_table");
+
+//Dataset<Row> results = spark.sql("select * from my_students_table where subject = 'French' AND year >= 2007 ");
+//Dataset<Row> results = spark.sql("select score,year from my_students_table where subject = 'French' AND year >= 2007 ");
+//Dataset<Row> results = spark.sql("select min(score) from my_students_table where subject = 'French' AND year >= 2007 ");
+//Dataset<Row> results = spark.sql("select avg(score) from my_students_table where subject = 'French' AND year >= 2007 ");
+//Dataset<Row> results = spark.sql("select max(score) from my_students_table where subject = 'French' AND year >= 2007 ");
+
+//Dataset<Row> results = spark.sql("select distinct(year) from my_students_table ");
+//Dataset<Row> results = spark.sql("select distinct(year) from my_students_table order by year");
+Dataset<Row> results = spark.sql("select distinct(year) from my_students_table order by year desc");
+
+results.show();

@@ -25,60 +25,25 @@ public class Main {
 		
 		Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/exams/students.csv");
 		
-		// show() will print out first 20 rows of dataset
-		//dataset.show();
+		// Section 18 - The Full SQL Syntax
+		// SQL statement does not work in filter method
+		//Dataset<Row> modernArtResults = dataset.filter("select * from students where subject = 'Modern Art' AND year >= 2007 ");
+		//modernArtResults.show();
 		
-		//long numberOfRows = dataset.count();
-		//System.out.println("There are " + numberOfRows + " records.");
+		// temporary view - in memory data structure
+		dataset.createOrReplaceTempView("my_students_table");
 		
-		// Section 17
-		//   single row
-		//Row firstRow = dataset.first();
+		//Dataset<Row> results = spark.sql("select * from my_students_table where subject = 'French' AND year >= 2007 ");
+		//Dataset<Row> results = spark.sql("select score,year from my_students_table where subject = 'French' AND year >= 2007 ");
+		//Dataset<Row> results = spark.sql("select min(score) from my_students_table where subject = 'French' AND year >= 2007 ");
+		//Dataset<Row> results = spark.sql("select avg(score) from my_students_table where subject = 'French' AND year >= 2007 ");
+		//Dataset<Row> results = spark.sql("select max(score) from my_students_table where subject = 'French' AND year >= 2007 ");
 		
-		// get(int index) - returns general object
-		//String subject = firstRow.get(2).toString();
-		//System.out.println(subject);
+		//Dataset<Row> results = spark.sql("select distinct(year) from my_students_table ");
+		//Dataset<Row> results = spark.sql("select distinct(year) from my_students_table order by year");
+		Dataset<Row> results = spark.sql("select distinct(year) from my_students_table order by year desc");
 		
-		// if using a header row, can use column name with .getAs(<<field_name>>) method.
-		//String subject = firstRow.getAs("subject").toString();
-		//System.out.println(subject);
-		
-		//int year = Integer.parseInt(firstRow.getAs("year"));
-		//System.out.println("The year is: " + year);
-		
-		//Dataset<Row> modernArtResults = dataset.filter("subject = 'Modern Art' AND year >= 2007 ");
-		
-		// Dataset with a Lambda function
-		//Dataset<Row> modernArtResults = dataset.filter( row -> row.getAs("subject").equals("Modern Art") 
-		// && Integer.parseInt(row.getAs("year")) >= 2007);
-		
-//		Column subjectColumn = dataset.col("subject");
-//		Column yearColumn = dataset.col("year");
-		
-		// Single column filter
-		//Dataset<Row> modernArtResults = dataset.filter(subjectColumn.equalTo("Modern Art"));
-		// Multiple columns filter
-		//Dataset<Row> modernArtResults = dataset.filter(subjectColumn.equalTo("Modern Art")
-		//															.and(yearColumn.geq(2007)));
-		
-		// using import static org.apache.spark.sql.functions.*;
-		// could declare column this way, or directly in filter method
-		//Column subjectColumn = col("subject");
-		//Column yearColumn = col("year");
-		
-		//Dataset<Row> modernArtResults = dataset.filter(subjectColumn.equalTo("Modern Art")
-		//															.and(yearColumn.geq(2007)));
-		
-		// using import static org.apache.spark.sql.functions.*;
-		// Calling col(*) directly in filter method without Column declarations 
-		Dataset<Row> modernArtResults = dataset.filter(col("subject").equalTo("Modern Art")
-				.and(col("year").geq(2007)));
-		
-		modernArtResults.show();
-		
-		long numberOfRows = modernArtResults.count();
-		System.out.println("There are " + numberOfRows + " records.");
-		
+		results.show();
 		
 		spark.close();
 				
