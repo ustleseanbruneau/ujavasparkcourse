@@ -1,0 +1,42 @@
+Section 24 - DataFrames API
+
+Spark SQL - 
+
+DataFrames - The Java API - use more "Java code" and less SQL/Spark API code
+
+Datasets - Java class Customers, Shopping Carts
+
+// Section 24 - DataFrames API		
+// using bigfile
+Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/biglog.txt");
+
+// just a single column result
+//dataset = dataset.select("level");
+
+// error because not a column name
+//dataset = dataset.select("level", "date_format(datetime,'MMMM')");
+
+// Example with selectExpr to get datetime of Month
+//dataset = dataset.selectExpr("level","date_format(datetime,'MMMM') as month");
+
+// Example with spark function - date_format with column and date format as parameter
+// need to be consistent - both columns or both string names
+// .alias("") - to add a column alias
+//dataset = dataset.select(col("level"),date_format(col("datetime"),"MMMM").alias("month"));
+
+// Grouping - add count() for aggregation
+//dataset = dataset.groupBy(col("level"), col("month")).count();
+
+// Order by month
+//  Need to add a monthnum column
+dataset = dataset.select(col("level"),
+		date_format(col("datetime"),"MMMM").alias("month"), 
+		date_format(col("datetime"),"M").alias("monthnum").cast(DataTypes.IntegerType));
+dataset = dataset.groupBy(col("level"), col("month"),col("monthnum")).count();
+dataset = dataset.orderBy(col("monthnum"), col("level"));
+dataset = dataset.drop(col("monthnum"));
+
+
+dataset.show(100);
+
+spark.close();		

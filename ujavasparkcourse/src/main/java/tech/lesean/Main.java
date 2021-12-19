@@ -13,6 +13,7 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import static org.apache.spark.sql.functions.*;
 
 public class Main {
 
@@ -30,32 +31,38 @@ public class Main {
 				.getOrCreate();
 		
 
-		// Section 23 - Ordering
-		// Any column which is not part of the "grouping" must have an 
-		//	Aggregation function performed on it
-		
+		// Section 24 - DataFrames API		
 		// using bigfile
 		Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/biglog.txt");
 		
-		dataset.createOrReplaceTempView("logging_table");
+		// just a single column result
+		//dataset = dataset.select("level");
+		
+		// error because not a column name
+		//dataset = dataset.select("level", "date_format(datetime,'MMMM')");
+		
+		// Example with selectExpr to get datetime of Month
+		//dataset = dataset.selectExpr("level","date_format(datetime,'MMMM') as month");
+		
+		// Example with spark function - date_format with column and date format as parameter
+		// need to be consistent - both columns or both string names
+		// .alias("") - to add a column alias
+		//dataset = dataset.select(col("level"),date_format(col("datetime"),"MMMM").alias("month"));
+		
+		// Grouping - add count() for aggregation
+		//dataset = dataset.groupBy(col("level"), col("month")).count();
+		
+		// Order by month
+		//  Need to add a monthnum column
+		dataset = dataset.select(col("level"),
+				date_format(col("datetime"),"MMMM").alias("month"), 
+				date_format(col("datetime"),"M").alias("monthnum").cast(DataTypes.IntegerType));
+		dataset = dataset.groupBy(col("level"), col("month"),col("monthnum")).count();
+		dataset = dataset.orderBy(col("monthnum"), col("level"));
+		dataset = dataset.drop(col("monthnum"));
 		
 		
-		// add monthnum column to dataset in query
-		//   used for ordering
-//		Dataset<Row> results = spark.sql
-//				("select level, date_format(datetime,'MMMM') as month, "
-//						+ "cast(first(date_format(datetime,'M')) as int ) as monthnum, count(1) as total "
-//						+ "from logging_table group by level, month order by monthnum");
-//		
-//		// remove monthnum column from dataset
-//		results.drop("monthnum");
-		
-		// optimization - without temporary column monthnum
-		Dataset<Row> results = spark.sql
-		("select level, date_format(datetime,'MMMM') as month, count(1) as total "
-				+ "from logging_table group by level, month order by cast(first(date_format(datetime,'M')) as int ), level ");
-
-		results.show(100);
+		dataset.show(100);
 		
 		spark.close();		
 		
