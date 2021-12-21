@@ -1,0 +1,89 @@
+// Section 28 - User Defined Functions
+
+Add columns with calculated values
+
+
+// Main.java
+
+// Get rid of extra logging
+Logger.getLogger("org").setLevel(Level.ERROR);
+Logger.getLogger("akka").setLevel(Level.ERROR);
+
+// Java Spark - setting up a session
+SparkSession spark = SparkSession.builder().appName("testingSql").master("local[*]")
+		.getOrCreate();
+
+
+// Section 28 - User Defined Functions		
+// using bigfile
+Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/biglog.txt");
+
+SimpleDateFormat input = new SimpleDateFormat("MMMM");
+SimpleDateFormat output = new SimpleDateFormat("M");
+
+spark.udf().register("monthNum", (String month) -> {
+	java.util.Date inputDate = input.parse(month);
+	return Integer.parseInt(output.format(inputDate));
+}, DataTypes.IntegerType );
+
+dataset.createOrReplaceTempView("logging_table");
+
+//Dataset<Row> results = spark.sql
+//		("select level, date_format(datetime,'MMMM') as month, count(1) as total "
+//				+ "from logging_table group by level, month order by cast(first(date_format(datetime,'M')) as int ), level ");
+
+// new using UDF
+Dataset<Row> results = spark.sql
+		("select level, date_format(datetime,'MMMM') as month, count(1) as total "
+				+ "from logging_table group by level, month order by monthNum(month), level ");
+
+results.show(100);
+
+spark.close();		
+
+
+
+// ExamResults.java
+// Section 28 - User Defined Functions	
+
+//spark.udf().register("hasPassed", (String grade) -> grade.equals("A+"), DataTypes.BooleanType );
+
+// previous statement with { }
+//spark.udf().register("hasPassed", (String grade) -> { 
+//	return grade.equals("A+");
+//}, DataTypes.BooleanType );
+
+// Grade A, B, or C is Pass
+//spark.udf().register("hasPassed", (String grade) -> { 
+//	return grade.startsWith("A") || grade.startsWith("B") || grade.startsWith("C");
+//}, DataTypes.BooleanType );
+
+// Two conditions
+spark.udf().register("hasPassed", (String grade, String subject) -> { 
+	
+	if (subject.equals("Biology")) {
+		if (grade.startsWith("A")) return true;
+		return false;
+	}
+	return grade.startsWith("A") || grade.startsWith("B") || grade.startsWith("C");
+}, DataTypes.BooleanType );
+
+// Example - using a Column object to convert data
+Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/exams/students.csv");
+
+// lit - passing in literal value
+//dataset = dataset.withColumn("pass", lit( "YES"));
+
+// New column based on condition (true or false)
+//dataset = dataset.withColumn("pass", lit( col("grade").equalTo("A+")));
+
+// New column using UDF
+//dataset = dataset.withColumn("pass", callUDF("hasPassed", col("grade")) );
+
+// Using UDF with two column parameters
+dataset = dataset.withColumn("pass", callUDF("hasPassed", col("grade"), col("subject")) );
+
+dataset.show();
+
+
+		

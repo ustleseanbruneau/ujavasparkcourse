@@ -24,54 +24,44 @@ public class ExamResults {
 				.getOrCreate();
 		
 
-		// Section 26 - More Aggregations		
+		// Section 28 - User Defined Functions	
+		
+		//spark.udf().register("hasPassed", (String grade) -> grade.equals("A+"), DataTypes.BooleanType );
 
-		//Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/exams/students.csv");
-		
-		// doesn't work with default data load - column "score" not a number
-		//dataset = dataset.groupBy("subject").max("score");
-		
-		// change option to read in csv file
-		// use inferSchema to automatically load with data
-		//Dataset<Row> dataset = spark.read().option("header", true).option("inferSchema", true).csv("src/main/resources/exams/students.csv");
-		
-		
-		// does work with option inferSchema data load 
-		//dataset = dataset.groupBy("subject").max("score");
-		
+		// previous statement with { }
+		//spark.udf().register("hasPassed", (String grade) -> { 
+		//	return grade.equals("A+");
+		//}, DataTypes.BooleanType );
+
+		// Grade A, B, or C is Pass
+		//spark.udf().register("hasPassed", (String grade) -> { 
+		//	return grade.startsWith("A") || grade.startsWith("B") || grade.startsWith("C");
+		//}, DataTypes.BooleanType );
+
+		// Two conditions
+		spark.udf().register("hasPassed", (String grade, String subject) -> { 
+			
+			if (subject.equals("Biology")) {
+				if (grade.startsWith("A")) return true;
+				return false;
+			}
+			return grade.startsWith("A") || grade.startsWith("B") || grade.startsWith("C");
+		}, DataTypes.BooleanType );
+
 		// Example - using a Column object to convert data
 		Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/exams/students.csv");
 		
-		//Column score = dataset.col("score");
-		//dataset = dataset.groupBy("subject").max(score.cast(DataTypes.IntegerType));
+		// lit - passing in literal value
+		//dataset = dataset.withColumn("pass", lit( "YES"));
 		
-		// Note using max function from 
-		//  import static org.apache.spark.sql.functions.*;
-		//dataset = dataset.groupBy("subject").agg(max(col("score").cast(DataTypes.IntegerType) ).alias("max score") );
+		// New column based on condition (true or false)
+		//dataset = dataset.withColumn("pass", lit( col("grade").equalTo("A+")));
 		
-		// Example with two agg columns
-		//dataset = dataset.groupBy("subject").agg(max(col("score").cast(DataTypes.IntegerType) ).alias("max score"),
-		//										min(col("score").cast(DataTypes.IntegerType) ).alias("min score"));
+		// New column using UDF
+		//dataset = dataset.withColumn("pass", callUDF("hasPassed", col("grade")) );
 		
-		// Example with agg function - don't need to cast datatypes
-		dataset = dataset.groupBy("subject").agg(max(col("score") ).alias("max score"),
-												min(col("score") ).alias("min score"));
-		
-		
-		// Section 27 - Practical Exercise
-		
-		//dataset = dataset.groupBy("subject").pivot("year").agg(avg(col("score")));
-		
-		// rounded to two decimal places
-		//dataset = dataset.groupBy("subject").pivot("year").agg( round( avg(col("score")), 2 ));
-		
-		// Adding standard deviation
-		//dataset = dataset.groupBy("subject").pivot("year").agg( round( avg(col("score")), 2 ), 
-		//														round( stddev(col("score")), 2 ) );
-		
-		// Adding alias for column header
-		//dataset = dataset.groupBy("subject").pivot("year").agg( round( avg(col("score")), 2 ).alias("average"), 
-		//														round( stddev(col("score")), 2 ).alias("stddev") );
+		// Using UDF with two column parameters
+		dataset = dataset.withColumn("pass", callUDF("hasPassed", col("grade"), col("subject")) );
 		
 		dataset.show();
 		
