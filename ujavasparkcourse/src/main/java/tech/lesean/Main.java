@@ -1,6 +1,7 @@
 package tech.lesean;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.Level;
@@ -31,36 +32,50 @@ public class Main {
 				.getOrCreate();
 		
 
-		// Section 24 - DataFrames API		
+		// Section 25 - Pivot Tables		
 		// using bigfile
 		Dataset<Row> dataset = spark.read().option("header", true).csv("src/main/resources/biglog.txt");
-		
-		// just a single column result
-		//dataset = dataset.select("level");
-		
-		// error because not a column name
-		//dataset = dataset.select("level", "date_format(datetime,'MMMM')");
-		
-		// Example with selectExpr to get datetime of Month
-		//dataset = dataset.selectExpr("level","date_format(datetime,'MMMM') as month");
-		
-		// Example with spark function - date_format with column and date format as parameter
-		// need to be consistent - both columns or both string names
-		// .alias("") - to add a column alias
-		//dataset = dataset.select(col("level"),date_format(col("datetime"),"MMMM").alias("month"));
-		
-		// Grouping - add count() for aggregation
-		//dataset = dataset.groupBy(col("level"), col("month")).count();
 		
 		// Order by month
 		//  Need to add a monthnum column
 		dataset = dataset.select(col("level"),
 				date_format(col("datetime"),"MMMM").alias("month"), 
 				date_format(col("datetime"),"M").alias("monthnum").cast(DataTypes.IntegerType));
-		dataset = dataset.groupBy(col("level"), col("month"),col("monthnum")).count();
-		dataset = dataset.orderBy(col("monthnum"), col("level"));
-		dataset = dataset.drop(col("monthnum"));
 		
+		// simple pivot table with row (level) and column (month)
+		//dataset = dataset.groupBy("level").pivot("month").count();
+		
+		// pivot table with month number - ordered correctly, but doesn't have month name as column header
+		//dataset = dataset.groupBy("level").pivot("monthnum").count();
+		
+		// simple pivot table with showing one month (column)
+		//List<Object> columns = new ArrayList<Object>();
+		//columns.add("March");
+		
+		//dataset = dataset.groupBy("level").pivot("month", columns).count();
+		
+		// Using object list with month names
+		//  Object is ordered, so columns will appear in correct monthly order
+		//  Good if you know column names in advance
+		Object[] months = new Object[] { 
+				"January", "February", "March", "April", "May", "June",
+				"July", "August", "September", "October", "November", "December"
+		};
+		//List<Object> columns = Arrays.asList(months);
+		
+		//dataset = dataset.groupBy("level").pivot("month", columns).count();
+		
+		
+		// Example to handle no values
+		//  Adding month "Augtober"
+		//Object[] months = new Object[] { 
+		//		"January", "February", "March", "April", "May", "June",
+		//		"July", "August", "September", "Augtober", "October", "November", "December"
+		//};
+		List<Object> columns = Arrays.asList(months);
+		
+		// add .na() and .fill(0) to populate a zero in case of missing value
+		dataset = dataset.groupBy("level").pivot("month", columns).count().na().fill(0);
 		
 		dataset.show(100);
 		
